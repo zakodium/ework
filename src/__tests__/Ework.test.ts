@@ -1,5 +1,45 @@
 import { Ework } from '..';
 
+describe('constructor errors', () => {
+  it('should throw if the worker is not a function', () => {
+    // @ts-ignore
+    expect(() => new Ework('bad')).toThrow(/worker must be a function/);
+  });
+
+  it('should throw if options is not an object', () => {
+    // @ts-ignore
+    expect(() => new Ework(() => null, null)).toThrow(
+      /options must be an object/,
+    );
+  });
+
+  it.each([0, -5, null, Infinity, 1.5, 'bad'])(
+    'should throw if maxWorkers is wrong (%s)',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (value: any) => {
+      expect(
+        () =>
+          new Ework(() => null, {
+            maxWorkers: value,
+          }),
+      ).toThrow(/options\.maxWorkers must be a positive integer/);
+    },
+  );
+
+  it.each([-1, -5, null, Infinity, 1.5, 'bad'])(
+    'should throw if minFreeThreads is wrong (%s)',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (value: any) => {
+      expect(
+        () =>
+          new Ework(() => null, {
+            minFreeThreads: value,
+          }),
+      ).toThrow(/options\.minFreeThreads must be a positive integer or 0/);
+    },
+  );
+});
+
 describe('execute', () => {
   it('should execute the job', async () => {
     function toUpperCase(value: string): string {

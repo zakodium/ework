@@ -3,7 +3,25 @@ import { cpus } from 'os';
 // eslint-disable-next-line import/no-unresolved
 import { Worker } from 'worker_threads';
 
-type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
+export type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
+
+export interface IEworkOptions {
+  /**
+   * Maximum number of workers that will be spawned. This number must be at least
+   * one and is only taken into account if smaller than the number of CPUs.
+   * Default: number of logical CPUs.
+   */
+  maxWorkers?: number;
+  /**
+   * Minimum number of CPU threads that will be kept free.
+   * Along with `maxWorkers`, this will determine the number of workers that will
+   * be spawned. If there is only one CPU, this option is ignored and one worker
+   * will be spawned.
+   * Default: 1.
+   */
+  minFreeThreads?: number;
+}
+
 type WorkerResolveFn<Output> = (result: Output) => void;
 type WorkerRejectFn = (reason: unknown) => void;
 
@@ -29,11 +47,38 @@ export class Ework<Input, Output> {
   private queue: IWorkerJob<Input, Output>[];
   private nextWorkId: number;
 
-  public constructor(worker: Eworker<Input, Output>) {
+  public constructor(
+    worker: Eworker<Input, Output>,
+    options: IEworkOptions = {},
+  ) {
+    if (typeof worker !== 'function') {
+      throw new TypeError('worker must be a function');
+    }
+    if (typeof options !== 'object' || options === null) {
+      throw new TypeError('options must be an object');
+    }
+
+    const {
+      maxWorkers = Math.max(numCpus - 1, 1),
+      minFreeThreads = 1,
+    } = options;
+
+    if (!Number.isInteger(maxWorkers) || maxWorkers < 1) {
+      throw new RangeError('options.maxWorkers must be a positive integer');
+    }
+    if (!Number.isInteger(minFreeThreads) || minFreeThreads < 0) {
+      throw new RangeError(
+        'options.minFreeThreads must be a positive integer or 0',
+      );
+    }
+
     const workerString = worker.toString();
     const workerCode = makeWorkerCode(workerString);
 
-    this.totalWorkers = Math.max(numCpus - 1, 2);
+    this.totalWorkers = Math.max(
+      Math.min(maxWorkers, numCpus - minFreeThreads),
+      1,
+    );
     this.freeWorkers = this.totalWorkers;
 
     this.workers = [];
