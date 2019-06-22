@@ -7,6 +7,9 @@
 
 Ework.
 
+Execute your tasks on another thread or in parallel, with a simple to use and
+cross-platform (Node.js >=10 and modern browsers) API.
+
 ## Installation
 
 `$ npm i ework`
