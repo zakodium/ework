@@ -22,7 +22,8 @@ export function makeWorkerCode(workerString: string): string {
 
 const workerFunction = ${workerString};
 
-self.onmessage = async (message) => {
+self.onmessage = async (event) => {
+  const { data: message } = event;
   if (message.type === 'work') {
     try {
       const result = await workerFunction(message.value);
@@ -58,6 +59,6 @@ self.onmessage = async (message) => {
       }
     }
   }
-});
+};
   `;
 }

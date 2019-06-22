@@ -14,8 +14,8 @@
     "lib-esm"
   ],
   "browser": {
-    "lib/worker.js": "lib/worker.browser.js",
-    "lib-esm/worker.js": "lib-esm/worker.browser.js"
+    "./lib/worker.js": "./lib/worker.browser.js",
+    "./lib-esm/worker.js": "./lib-esm/worker.browser.js"
   },
   "scripts": {
     "clean": "rimraf lib lib-esm",
