@@ -2,12 +2,25 @@ import { cpus } from 'os';
 
 import { Worker } from 'worker_threads';
 
+import { IWorker } from './Ework';
+
 const cpuList = cpus();
 
 export const numCpus = cpuList ? cpuList.length : 1;
 
 export function spawnWorker(workerCode: string): Worker {
   return new Worker(workerCode, { eval: true });
+}
+
+export function terminateWorker<Input, Output>(
+  worker: IWorker<Input, Output>,
+): Promise<void> {
+  return new Promise((resolve) => {
+    worker.worker.terminate(() => resolve());
+    if (worker.job !== null) {
+      worker.job.reject(new Error('worker terminated'));
+    }
+  });
 }
 
 export function addWorkerListener(

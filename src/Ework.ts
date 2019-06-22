@@ -5,6 +5,7 @@ import {
   makeWorkerCode,
   spawnWorker,
   addWorkerListener,
+  terminateWorker,
 } from './worker';
 
 export type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
@@ -29,7 +30,7 @@ export interface IEworkOptions {
 type WorkerResolveFn<Output> = (result: Output) => void;
 type WorkerRejectFn = (reason: unknown) => void;
 
-interface IWorker<Input, Output> {
+export interface IWorker<Input, Output> {
   worker: Worker;
   isWorking: boolean;
   job: IWorkerJob<Input, Output> | null;
@@ -135,17 +136,7 @@ export class Ework<Input, Output> {
   }
 
   public async terminate(): Promise<void> {
-    await Promise.all(
-      this.workers.map(
-        (w) =>
-          new Promise((resolve) => {
-            w.worker.terminate(() => resolve());
-            if (w.job !== null) {
-              w.job.reject(new Error('worker terminated'));
-            }
-          }),
-      ),
-    );
+    await Promise.all(this.workers.map(terminateWorker));
     this.freeWorkers = 0;
     this.queue = [];
     this.workers = [];

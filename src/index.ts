@@ -1,1 +1,1 @@
-export * from './Ework';
+export { Ework, Eworker, IEworkOptions } from './Ework';

@@ -1,3 +1,5 @@
+import { IWorker } from './Ework';
+
 /* eslint-env browser */
 
 export const numCpus = navigator.hardwareConcurrency || 1;
@@ -6,6 +8,15 @@ export function spawnWorker(workerCode: string): Worker {
   const blob = new Blob([workerCode], { type: 'application/javascript' });
   const url = URL.createObjectURL(blob);
   return new Worker(url);
+}
+
+export function terminateWorker<Input, Output>(
+  worker: IWorker<Input, Output>,
+): void {
+  worker.worker.terminate();
+  if (worker.job !== null) {
+    worker.job.reject(new Error('worker terminated'));
+  }
 }
 
 export function addWorkerListener(
