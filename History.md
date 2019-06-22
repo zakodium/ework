@@ -1,3 +1,12 @@
+# [0.2.0](https://github.com/zakodium/ework/compare/v0.1.0...v0.2.0) (2019-06-22)
+
+
+### Features
+
+* add optional init function ([6738b46](https://github.com/zakodium/ework/commit/6738b46))
+
+
+
 # [0.1.0](https://github.com/zakodium/ework/compare/v0.0.1...v0.1.0) (2019-06-22)
 
 
