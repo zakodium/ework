@@ -73,6 +73,15 @@ describe('execute', () => {
     expect(result).toBe('test');
     await worker.terminate();
   });
+
+  it('should work with dependencies', async () => {
+    const worker = new Ework(async (value: number) => {
+      return require('next-power-of-two')(value);
+    });
+    const result = await worker.execute(30);
+    expect(result).toBe(32);
+    await worker.terminate();
+  });
 });
 
 describe('map', () => {
