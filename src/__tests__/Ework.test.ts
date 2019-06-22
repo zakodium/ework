@@ -15,7 +15,6 @@ describe('constructor errors', () => {
 
   it.each([0, -5, null, Infinity, 1.5, 'bad'])(
     'should throw if maxWorkers is wrong (%s)',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (value: any) => {
       expect(
         () =>
@@ -28,7 +27,6 @@ describe('constructor errors', () => {
 
   it.each([-1, -5, null, Infinity, 1.5, 'bad'])(
     'should throw if minFreeThreads is wrong (%s)',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (value: any) => {
       expect(
         () =>

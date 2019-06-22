@@ -1,7 +1,11 @@
-import { cpus } from 'os';
-
-// eslint-disable-next-line import/no-unresolved
 import { Worker } from 'worker_threads';
+
+import {
+  numCpus,
+  makeWorkerCode,
+  spawnWorker,
+  addWorkerListener,
+} from './worker';
 
 export type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
 
@@ -38,7 +42,13 @@ interface IWorkerJob<Input, Output> {
   reject: WorkerRejectFn;
 }
 
-const numCpus = cpus().length;
+interface IWorkerMessage<Output> {
+  id: number;
+  type: 'result';
+  status: 'success' | 'error';
+  result?: Output;
+  error?: any;
+}
 
 export class Ework<Input, Output> {
   private totalWorkers: number;
@@ -58,10 +68,7 @@ export class Ework<Input, Output> {
       throw new TypeError('options must be an object');
     }
 
-    const {
-      maxWorkers = Math.max(numCpus - 1, 1),
-      minFreeThreads = 1,
-    } = options;
+    const { maxWorkers = numCpus, minFreeThreads = 1 } = options;
 
     if (!Number.isInteger(maxWorkers) || maxWorkers < 1) {
       throw new RangeError('options.maxWorkers must be a positive integer');
@@ -83,32 +90,39 @@ export class Ework<Input, Output> {
 
     this.workers = [];
     for (let i = 0; i < this.totalWorkers; i++) {
-      const worker = new Worker(workerCode, { eval: true });
+      const worker = spawnWorker(workerCode);
       const workerObj: IWorker<Input, Output> = {
         worker,
         isWorking: false,
         job: null,
       };
-      worker.on('message', (message) => {
-        if (message.type === 'result') {
-          const job = workerObj.job;
-          if (job === null) {
-            throw new Error('UNREACHABLE');
+      addWorkerListener(
+        worker,
+        'message',
+        (message: IWorkerMessage<Output>) => {
+          if (message.type === 'result') {
+            const job = workerObj.job;
+            if (job === null) {
+              throw new Error('UNREACHABLE');
+            }
+            if (job.id !== message.id) {
+              throw new Error('UNREACHABLE');
+            }
+            if (message.status === 'success') {
+              if (message.result === undefined) {
+                throw new Error('UNREACHABLE');
+              }
+              job.resolve(message.result);
+            } else {
+              job.reject(new Error(message.error));
+            }
+            workerObj.job = null;
+            workerObj.isWorking = false;
+            this.freeWorkers++;
+            this.run();
           }
-          if (job.id !== message.id) {
-            throw new Error('UNREACHABLE');
-          }
-          if (message.status === 'success') {
-            job.resolve(message.result);
-          } else {
-            job.reject(new Error(message.error));
-          }
-          workerObj.job = null;
-          workerObj.isWorking = false;
-          this.freeWorkers++;
-          this.run();
-        }
-      });
+        },
+      );
       this.workers.push(workerObj);
     }
 
@@ -186,50 +200,4 @@ export class Ework<Input, Output> {
     }
     return worker;
   }
-}
-
-function makeWorkerCode(workerString: string): string {
-  return `'use strict';
-const { parentPort } = require('worker_threads');
-
-const workerFunction = ${workerString};
-
-parentPort.on('message', async (message) => {
-  if (message.type === 'work') {
-    try {
-      const result = await workerFunction(message.value);
-      parentPort.postMessage({
-        id: message.id,
-        type: 'result',
-        status: 'success',
-        result
-      });
-    } catch (error) {
-      let errorToTransfer = error;
-      if (error) {
-        if (error.stack) {
-          errorToTransfer = error.stack;
-        } else if (error.message) {
-          errorToTransfer = error.message;
-        }
-      }
-      try {
-        parentPort.postMessage({
-          id: message.id,
-          type: 'result',
-          status: 'error',
-          error: errorToTransfer
-        });
-      } catch (e) {
-        parentPort.postMessage({
-          id: message.id,
-          type: 'result',
-          status: 'error',
-          error: 'Work failed but error could not be transferred: ' + e.message
-        });
-      }
-    }
-  }
-});
-  `;
 }

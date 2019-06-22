@@ -1,1 +1,3 @@
 extends: cheminfo-typescript
+settings:
+  import/core-modules: [worker_threads]
