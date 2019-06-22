@@ -36,7 +36,7 @@ run().catch((e) => {
 [npm-image]: https://img.shields.io/npm/v/ework.svg?style=flat-square
 [npm-url]: https://www.npmjs.com/package/ework
 [travis-image]: https://img.shields.io/travis/zakodium/ework/master.svg?style=flat-square
-[travis-url]: https://travis-ci.org/zakodium/ework
+[travis-url]: https://travis-ci.com/zakodium/ework
 [codecov-image]: https://img.shields.io/codecov/c/github/zakodium/ework.svg?style=flat-square
 [codecov-url]: https://codecov.io/gh/zakodium/ework
 [download-image]: https://img.shields.io/npm/dm/ework.svg?style=flat-square
