@@ -5,19 +5,28 @@
 [![Test coverage][codecov-image]][codecov-url]
 [![npm download][download-image]][download-url]
 
-.
+Ework.
 
 ## Installation
 
-`$ npm install --save ework`
+`$ npm i ework`
 
 ## Usage
 
 ```js
-import { myModule } from 'ework';
+import { Ework } from 'ework';
 
-const result = myModule(args);
-// result is ...
+async function run() {
+  const worker = new Ework((value) => value ** 2);
+  const value = await worker.execute(6); // 36
+  const values = await worker.map([1, 2, 3]); // [1, 4, 9]
+  await worker.terminate();
+}
+
+run().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
 ```
 
 ## License

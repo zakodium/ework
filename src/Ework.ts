@@ -3,7 +3,7 @@ import { cpus } from 'os';
 // eslint-disable-next-line import/no-unresolved
 import { Worker } from 'worker_threads';
 
-type Eworker<Input, Output> = (value: Input) => Output;
+type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
 type WorkerResolveFn<Output> = (result: Output) => void;
 type WorkerRejectFn = (reason: unknown) => void;
 
@@ -75,13 +75,20 @@ export class Ework<Input, Output> {
     return this.enqueue(value);
   }
 
-  public terminate(): void {
-    this.workers.forEach((w) => {
-      w.worker.terminate();
-      if (w.job !== null) {
-        w.job.reject(new Error('worker terminated'));
-      }
-    });
+  public async terminate(): Promise<void> {
+    await Promise.all(
+      this.workers.map(
+        (w) =>
+          new Promise((resolve) => {
+            w.worker.terminate(() => resolve());
+            if (w.job !== null) {
+              w.job.reject(new Error('worker terminated'));
+            }
+          }),
+      ),
+    );
+    this.freeWorkers = 0;
+    this.queue = [];
     this.workers = [];
   }
 
