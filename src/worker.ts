@@ -31,49 +31,69 @@ export function addWorkerListener(
   worker.addListener(type, listener);
 }
 
-export function makeWorkerCode(workerString: string): string {
+export function makeWorkerCode(
+  initString: string,
+  workerString: string,
+): string {
   return `'use strict';
 
 const { parentPort } = require('worker_threads');
 
+const initFunction = ${initString};
 const workerFunction = ${workerString};
+const messagePort = parentPort;
 
-parentPort.on('message', async (message) => {
+function postError(obj, error) {
+  let errorToTransfer = error;
+  if (error) {
+    if (error.stack) {
+      errorToTransfer = error.stack;
+    } else if (error.message) {
+      errorToTransfer = error.message;
+    }
+  }
+  try {
+    messagePort.postMessage(Object.assign({}, obj, {
+      status: 'error',
+      error: errorToTransfer
+    }));
+  } catch (e) {
+    messagePort.postMessage({
+      status: 'error',
+      error: 'Work failed but error could not be transferred: ' + e.message
+    });
+  }
+}
+
+messagePort.on('message', async (message) => {
   if (message.type === 'work') {
     try {
       const result = await workerFunction(message.value);
-      parentPort.postMessage({
+      messagePort.postMessage({
         id: message.id,
         type: 'result',
         status: 'success',
         result
       });
     } catch (error) {
-      let errorToTransfer = error;
-      if (error) {
-        if (error.stack) {
-          errorToTransfer = error.stack;
-        } else if (error.message) {
-          errorToTransfer = error.message;
-        }
-      }
-      try {
-        parentPort.postMessage({
-          id: message.id,
-          type: 'result',
-          status: 'error',
-          error: errorToTransfer
-        });
-      } catch (e) {
-        parentPort.postMessage({
-          id: message.id,
-          type: 'result',
-          status: 'error',
-          error: 'Work failed but error could not be transferred: ' + e.message
-        });
-      }
+      postError({
+        id: message.id,
+        type: 'result'
+      }, error);
+    }
+  } else if (message.type === 'init') {
+    try {
+      await initFunction();
+      messagePort.postMessage({
+        type: 'init',
+        status: 'success'
+      });
+    } catch (error) {
+      postError({
+        type: 'init'
+      }, error);
     }
   }
 });
-  `;
+`;
 }

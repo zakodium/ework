@@ -25,6 +25,11 @@ export interface IEworkOptions {
    * Default: 1.
    */
   minFreeThreads?: number;
+  /**
+   * Initialization function that will be executed after spawning the worker and
+   * before sending jobs to it.
+   */
+  init?: () => any;
 }
 
 type WorkerResolveFn<Output> = (result: Output) => void;
@@ -43,13 +48,28 @@ interface IWorkerJob<Input, Output> {
   reject: WorkerRejectFn;
 }
 
-interface IWorkerMessage<Output> {
-  id: number;
-  type: 'result';
-  status: 'success' | 'error';
-  result?: Output;
-  error?: any;
-}
+type IWorkerMessage<Output> =
+  | {
+    type: 'result';
+    id: number;
+    status: 'success';
+    result: Output;
+  }
+  | {
+    type: 'result';
+    id: number;
+    status: 'error';
+    error: any;
+  }
+  | {
+    type: 'init';
+    status: 'success';
+  }
+  | {
+    type: 'init';
+    status: 'error';
+    error: any;
+  };
 
 export class Ework<Input, Output> {
   private totalWorkers: number;
@@ -69,7 +89,11 @@ export class Ework<Input, Output> {
       throw new TypeError('options must be an object');
     }
 
-    const { maxWorkers = numCpus, minFreeThreads = 1 } = options;
+    const {
+      maxWorkers = numCpus,
+      minFreeThreads = 1,
+      init = () => null,
+    } = options;
 
     if (!Number.isInteger(maxWorkers) || maxWorkers < 1) {
       throw new RangeError('options.maxWorkers must be a positive integer');
@@ -80,28 +104,41 @@ export class Ework<Input, Output> {
       );
     }
 
+    if (typeof init !== 'function') {
+      throw new TypeError('options.init must be a function');
+    }
+
+    const initString = init.toString();
     const workerString = worker.toString();
-    const workerCode = makeWorkerCode(workerString);
+    const workerCode = makeWorkerCode(initString, workerString);
 
     this.totalWorkers = Math.max(
       Math.min(maxWorkers, numCpus - minFreeThreads),
       1,
     );
-    this.freeWorkers = this.totalWorkers;
+    this.freeWorkers = 0;
 
     this.workers = [];
     for (let i = 0; i < this.totalWorkers; i++) {
       const worker = spawnWorker(workerCode);
       const workerObj: IWorker<Input, Output> = {
         worker,
-        isWorking: false,
+        isWorking: true,
         job: null,
       };
       addWorkerListener(
         worker,
         'message',
         (message: IWorkerMessage<Output>) => {
-          if (message.type === 'result') {
+          if (message.type === 'init') {
+            if (message.status === 'success') {
+              workerObj.isWorking = false;
+              this.freeWorkers++;
+              this.run();
+            } else {
+              // TODO handle init error
+            }
+          } else if (message.type === 'result') {
             const job = workerObj.job;
             if (job === null) {
               throw new Error('UNREACHABLE');
@@ -110,9 +147,6 @@ export class Ework<Input, Output> {
               throw new Error('UNREACHABLE');
             }
             if (message.status === 'success') {
-              if (message.result === undefined) {
-                throw new Error('UNREACHABLE');
-              }
               job.resolve(message.result);
             } else {
               job.reject(new Error(message.error));
@@ -121,9 +155,12 @@ export class Ework<Input, Output> {
             workerObj.isWorking = false;
             this.freeWorkers++;
             this.run();
+          } else {
+            throw new Error('UNREACHABLE');
           }
         },
       );
+      worker.postMessage({ type: 'init' });
       this.workers.push(workerObj);
     }
 

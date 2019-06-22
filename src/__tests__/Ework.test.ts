@@ -36,6 +36,18 @@ describe('constructor errors', () => {
       ).toThrow(/options\.minFreeThreads must be a positive integer or 0/);
     },
   );
+
+  it.each([null, 42, 'test'])(
+    'should throw if init is not a function (%s)',
+    (value: any) => {
+      expect(
+        () =>
+          new Ework(() => null, {
+            init: value,
+          }),
+      ).toThrow(/init must be a function/);
+    },
+  );
 });
 
 describe('execute', () => {
@@ -112,6 +124,31 @@ describe('map', () => {
     const data = Array(1000).fill(500);
     const result = await worker.map(data);
     expect(result).toStrictEqual(Array(1000).fill(1000));
+    await worker.terminate();
+  });
+});
+
+describe('init function', () => {
+  it('should execute and wait for the init function', async () => {
+    const worker = new Ework(
+      () => {
+        // @ts-ignore
+        return global.initValue;
+      },
+      {
+        init: async () => {
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              // @ts-ignore
+              global.initValue = 42;
+              resolve();
+            }, 500);
+          });
+        },
+      },
+    );
+    const result = await worker.execute(null);
+    expect(result).toBe(42);
     await worker.terminate();
   });
 });
