@@ -89,11 +89,7 @@ export class Ework<Input, Output> {
       throw new TypeError('options must be an object');
     }
 
-    const {
-      maxWorkers = numCpus,
-      minFreeThreads = 1,
-      init = () => null,
-    } = options;
+    const { maxWorkers = numCpus, minFreeThreads = 1, init } = options;
 
     if (!Number.isInteger(maxWorkers) || maxWorkers < 1) {
       throw new RangeError('options.maxWorkers must be a positive integer');
@@ -104,11 +100,11 @@ export class Ework<Input, Output> {
       );
     }
 
-    if (typeof init !== 'function') {
+    if (typeof init !== 'undefined' && typeof init !== 'function') {
       throw new TypeError('options.init must be a function');
     }
 
-    const initString = init.toString();
+    const initString = init ? init.toString() : '() => null';
     const workerString = worker.toString();
     const workerCode = makeWorkerCode(initString, workerString);
 
