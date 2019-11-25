@@ -35,9 +35,9 @@ run().catch((e) => {
 
 [MIT](./LICENSE)
 
-[npm-image]: https://img.shields.io/npm/v/ework.svg?style=flat-square
+[npm-image]: https://img.shields.io/npm/v/ework.svg
 [npm-url]: https://www.npmjs.com/package/ework
 [ci-image]: https://github.com/zakodium/ework/workflows/Node.js%20CI/badge.svg?branch=master
 [ci-url]: https://github.com/zakodium/ework/actions?query=workflow%3A%22Node.js+CI%22
-[download-image]: https://img.shields.io/npm/dm/ework.svg?style=flat-square
+[download-image]: https://img.shields.io/npm/dm/ework.svg
 [download-url]: https://www.npmjs.com/package/ework
