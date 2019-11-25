@@ -1,4 +1,4 @@
-import { IWorker } from './Ework';
+import { IWorker } from './types';
 
 /* eslint-env browser */
 
@@ -10,13 +10,10 @@ export function spawnWorker(workerCode: string): Worker {
   return new Worker(url);
 }
 
-export function terminateWorker<Input, Output>(
+export async function terminateWorker<Input, Output>(
   worker: IWorker<Input, Output>,
-): void {
-  worker.worker.terminate();
-  if (worker.job !== null) {
-    worker.job.reject(new Error('worker terminated'));
-  }
+): Promise<void> {
+  await worker.worker.terminate();
 }
 
 export function addWorkerListener(

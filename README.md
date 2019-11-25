@@ -1,8 +1,7 @@
 # ework
 
 [![NPM version][npm-image]][npm-url]
-[![build status][travis-image]][travis-url]
-[![Test coverage][codecov-image]][codecov-url]
+[![build status][ci-image]][ci-url]
 [![npm download][download-image]][download-url]
 
 Ework.
@@ -38,9 +37,7 @@ run().catch((e) => {
 
 [npm-image]: https://img.shields.io/npm/v/ework.svg?style=flat-square
 [npm-url]: https://www.npmjs.com/package/ework
-[travis-image]: https://img.shields.io/travis/zakodium/ework/master.svg?style=flat-square
-[travis-url]: https://travis-ci.com/zakodium/ework
-[codecov-image]: https://img.shields.io/codecov/c/github/zakodium/ework.svg?style=flat-square
-[codecov-url]: https://codecov.io/gh/zakodium/ework
+[ci-image]: https://github.com/zakodium/ework/workflows/Node.js%20CI/badge.svg?branch=master
+[ci-url]: https://github.com/zakodium/ework/actions?query=workflow%3A%22Node.js+CI%22
 [download-image]: https://img.shields.io/npm/dm/ework.svg?style=flat-square
 [download-url]: https://www.npmjs.com/package/ework

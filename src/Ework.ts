@@ -1,5 +1,3 @@
-import { Worker } from 'worker_threads';
-
 import {
   numCpus,
   makeWorkerCode,
@@ -7,6 +5,13 @@ import {
   addWorkerListener,
   terminateWorker,
 } from './worker';
+import {
+  IWorkerMessage,
+  IWorker,
+  IWorkerJob,
+  WorkerResolveFn,
+  WorkerRejectFn,
+} from './types';
 
 export type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
 
@@ -31,45 +36,6 @@ export interface IEworkOptions {
    */
   init?: () => any;
 }
-
-type WorkerResolveFn<Output> = (result: Output) => void;
-type WorkerRejectFn = (reason: unknown) => void;
-
-export interface IWorker<Input, Output> {
-  worker: Worker;
-  isWorking: boolean;
-  job: IWorkerJob<Input, Output> | null;
-}
-
-interface IWorkerJob<Input, Output> {
-  id: number;
-  value: Input;
-  resolve: WorkerResolveFn<Output>;
-  reject: WorkerRejectFn;
-}
-
-type IWorkerMessage<Output> =
-  | {
-    type: 'result';
-    id: number;
-    status: 'success';
-    result: Output;
-  }
-  | {
-    type: 'result';
-    id: number;
-    status: 'error';
-    error: any;
-  }
-  | {
-    type: 'init';
-    status: 'success';
-  }
-  | {
-    type: 'init';
-    status: 'error';
-    error: any;
-  };
 
 export class Ework<Input, Output> {
   private totalWorkers: number;
@@ -116,14 +82,14 @@ export class Ework<Input, Output> {
 
     this.workers = [];
     for (let i = 0; i < this.totalWorkers; i++) {
-      const worker = spawnWorker(workerCode);
+      const workerInstance = spawnWorker(workerCode);
       const workerObj: IWorker<Input, Output> = {
-        worker,
+        worker: workerInstance,
         isWorking: true,
         job: null,
       };
       addWorkerListener(
-        worker,
+        workerInstance,
         'message',
         (message: IWorkerMessage<Output>) => {
           if (message.type === 'init') {
@@ -156,7 +122,7 @@ export class Ework<Input, Output> {
           }
         },
       );
-      worker.postMessage({ type: 'init' });
+      workerInstance.postMessage({ type: 'init' });
       this.workers.push(workerObj);
     }
 
@@ -176,10 +142,10 @@ export class Ework<Input, Output> {
   }
 
   public async map(values: Input[]): Promise<Output[]> {
-    return Promise.all(values.map((value) => this.enqueue(value)));
+    return Promise.all(values.map(async (value) => this.enqueue(value)));
   }
 
-  private enqueue(value: Input): Promise<Output> {
+  private async enqueue(value: Input): Promise<Output> {
     let resolve: WorkerResolveFn<Output>;
     let reject: WorkerRejectFn;
     const promise = new Promise<Output>((res, rej) => {

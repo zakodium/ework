@@ -1,14 +1,12 @@
 {
   "compilerOptions": {
-    "declaration": true,
     "esModuleInterop": true,
-    "module": "commonjs",
+    "lib": ["dom", "esnext"],
     "moduleResolution": "node",
-    "outDir": "./lib",
-    "sourceMap": true,
+    "removeComments": false,
     "strict": true,
-    "target": "esnext"
+    "target": "es2019"
   },
-  "include": ["./src/**/*"],
-  "exclude": ["./src/**/__tests__"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }

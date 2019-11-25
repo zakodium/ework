@@ -1,8 +1,7 @@
 import { cpus } from 'os';
-
 import { Worker } from 'worker_threads';
 
-import { IWorker } from './Ework';
+import { IWorker, IWorkerMessage } from './types';
 
 const cpuList = cpus();
 
@@ -12,21 +11,16 @@ export function spawnWorker(workerCode: string): Worker {
   return new Worker(workerCode, { eval: true });
 }
 
-export function terminateWorker<Input, Output>(
+export async function terminateWorker<Input, Output>(
   worker: IWorker<Input, Output>,
 ): Promise<void> {
-  return new Promise((resolve) => {
-    worker.worker.terminate(() => resolve());
-    if (worker.job !== null) {
-      worker.job.reject(new Error('worker terminated'));
-    }
-  });
+  await worker.worker.terminate();
 }
 
 export function addWorkerListener(
   worker: Worker,
   type: string,
-  listener: any,
+  listener: (message: IWorkerMessage<any>) => unknown,
 ): void {
   worker.addListener(type, listener);
 }
