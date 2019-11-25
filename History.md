@@ -1,3 +1,12 @@
+## [0.2.1](https://github.com/zakodium/ework/compare/v0.2.0...v0.2.1) (2019-11-25)
+
+
+### Bug Fixes
+
+* do not use deprecated worker.terminate with callback ([ed6df97](https://github.com/zakodium/ework/commit/ed6df975b96c79a728781655f8878c3894fde8b9))
+
+
+
 # [0.2.0](https://github.com/zakodium/ework/compare/v0.1.0...v0.2.0) (2019-06-22)
 
 
