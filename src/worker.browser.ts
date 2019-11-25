@@ -29,8 +29,7 @@ export function makeWorkerCode(
   initString: string,
   workerString: string,
 ): string {
-  return `'use strict';
-
+  return `
 const initFunction = ${initString};
 const workerFunction = ${workerString};
 const messagePort = self;
@@ -76,7 +75,7 @@ messagePort.onmessage = async (event) => {
     }
   } else if (message.type === 'init') {
     try {
-      await initFunction();
+      await initFunction(message.value);
       messagePort.postMessage({
         type: 'init',
         status: 'success'

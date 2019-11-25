@@ -29,8 +29,7 @@ export function makeWorkerCode(
   initString: string,
   workerString: string,
 ): string {
-  return `'use strict';
-
+  return `
 const { parentPort } = require('worker_threads');
 
 const initFunction = ${initString};
@@ -77,7 +76,7 @@ messagePort.on('message', async (message) => {
     }
   } else if (message.type === 'init') {
     try {
-      await initFunction();
+      await initFunction(message.value);
       messagePort.postMessage({
         type: 'init',
         status: 'success'

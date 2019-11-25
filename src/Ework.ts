@@ -31,10 +31,19 @@ export interface IEworkOptions {
    */
   minFreeThreads?: number;
   /**
+   * Number of workers to spawn. If this option is specified, `maxWorkers` and
+   * `minFreeThreds` will be ignored.
+   */
+  numWorkers?: number;
+  /**
    * Initialization function that will be executed after spawning the worker and
    * before sending jobs to it.
    */
-  init?: () => any;
+  init?: (data: any) => any;
+  /**
+   * Optional data passed to the init function of each worker.
+   */
+  initData?: any;
 }
 
 export class Ework<Input, Output> {
@@ -55,14 +64,31 @@ export class Ework<Input, Output> {
       throw new TypeError('options must be an object');
     }
 
-    const { maxWorkers = numCpus, minFreeThreads = 1, init } = options;
+    const {
+      maxWorkers = numCpus,
+      minFreeThreads = 1,
+      numWorkers,
+      init,
+      initData,
+    } = options;
 
-    if (!Number.isInteger(maxWorkers) || maxWorkers < 1) {
-      throw new RangeError('options.maxWorkers must be a positive integer');
-    }
-    if (!Number.isInteger(minFreeThreads) || minFreeThreads < 0) {
-      throw new RangeError(
-        'options.minFreeThreads must be a positive integer or 0',
+    if (numWorkers !== undefined) {
+      if (!Number.isInteger(numWorkers) || numWorkers < 1) {
+        throw new RangeError('options.numWorkers must be a positive integer');
+      }
+      this.totalWorkers = numWorkers;
+    } else {
+      if (!Number.isInteger(maxWorkers) || maxWorkers < 1) {
+        throw new RangeError('options.maxWorkers must be a positive integer');
+      }
+      if (!Number.isInteger(minFreeThreads) || minFreeThreads < 0) {
+        throw new RangeError(
+          'options.minFreeThreads must be a positive integer or 0',
+        );
+      }
+      this.totalWorkers = Math.max(
+        Math.min(maxWorkers, numCpus - minFreeThreads),
+        1,
       );
     }
 
@@ -74,10 +100,6 @@ export class Ework<Input, Output> {
     const workerString = worker.toString();
     const workerCode = makeWorkerCode(initString, workerString);
 
-    this.totalWorkers = Math.max(
-      Math.min(maxWorkers, numCpus - minFreeThreads),
-      1,
-    );
     this.freeWorkers = 0;
 
     this.workers = [];
@@ -102,12 +124,8 @@ export class Ework<Input, Output> {
             }
           } else if (message.type === 'result') {
             const job = workerObj.job;
-            if (job === null) {
-              throw new Error('UNREACHABLE');
-            }
-            if (job.id !== message.id) {
-              throw new Error('UNREACHABLE');
-            }
+            assert(job !== null);
+            assert(job.id === message.id);
             if (message.status === 'success') {
               job.resolve(message.result);
             } else {
@@ -118,11 +136,11 @@ export class Ework<Input, Output> {
             this.freeWorkers++;
             this.run();
           } else {
-            throw new Error('UNREACHABLE');
+            assert(false);
           }
         },
       );
-      workerInstance.postMessage({ type: 'init' });
+      workerInstance.postMessage({ type: 'init', value: initData });
       this.workers.push(workerObj);
     }
 
@@ -168,9 +186,7 @@ export class Ework<Input, Output> {
   private run(): void {
     while (this.freeWorkers > 0 && this.queue.length > 0) {
       const nextJob = this.queue.shift();
-      if (nextJob === undefined) {
-        throw new Error('UNREACHABLE');
-      }
+      assert(nextJob !== undefined);
       const worker = this.getFreeWorker();
       worker.worker.postMessage({
         id: nextJob.id,
@@ -185,9 +201,11 @@ export class Ework<Input, Output> {
 
   private getFreeWorker(): IWorker<Input, Output> {
     const worker = this.workers.find((w) => !w.isWorking);
-    if (worker === undefined) {
-      throw new Error('UNREACHABLE');
-    }
+    assert(worker !== undefined);
     return worker;
   }
+}
+
+function assert(condition: any): asserts condition {
+  if (!condition) throw new Error('UNREACHABLE');
 }

@@ -151,4 +151,23 @@ describe('init function', () => {
     expect(result).toBe(42);
     await worker.terminate();
   });
+
+  it('should pass initData to the init function', async () => {
+    const worker = new Ework(
+      function() {
+        // @ts-ignore
+        return this.afterInit;
+      },
+      {
+        init: function(data) {
+          // @ts-ignore
+          this.afterInit = data * 2;
+        },
+        initData: 21,
+      },
+    );
+    const result = await worker.execute(null);
+    expect(result).toBe(42);
+    await worker.terminate();
+  });
 });
