@@ -107,6 +107,23 @@ describe('map', () => {
     await worker.terminate();
   });
 
+  it('should map an Iterable of values', async () => {
+    function* range(start = 0, end: number, step = 1): Generator<number> {
+      for (let i = start; i <= end; i += step) {
+        yield i;
+      }
+    }
+
+    function double(value: number): number {
+      return value * 2;
+    }
+
+    const worker = new Ework(double);
+    const result = await worker.map(range(0, 3));
+    expect(result).toStrictEqual([0, 2, 4, 6]);
+    await worker.terminate();
+  });
+
   it('should reject in case of error', async () => {
     function mabyePlusOne(value: number): number {
       if (value < 5) return value + 1;
