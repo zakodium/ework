@@ -46,6 +46,17 @@ export interface IEworkOptions {
   initData?: any;
 }
 
+function* map<T, R, A>(
+  iterable: Iterable<T>,
+  mapFn: (this: A, value: T) => R,
+  thisArg?: A,
+): Generator<R, void> {
+  for (const item of iterable) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    yield mapFn.call(thisArg!, item);
+  }
+}
+
 export class Ework<Input, Output> {
   private totalWorkers: number;
   private freeWorkers: number;
@@ -160,8 +171,7 @@ export class Ework<Input, Output> {
   }
 
   public async map(values: Iterable<Input>): Promise<Output[]> {
-    const todo = [...values];
-    return Promise.all(todo.map(async (value) => this.enqueue(value)));
+    return Promise.all(map(values, this.enqueue, this));
   }
 
   private async enqueue(value: Input): Promise<Output> {
