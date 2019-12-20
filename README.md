@@ -45,18 +45,18 @@ its context, so it shouldn't use variables from its surrounding scope.
 
 An object with the following optional properties:
 
-- `init`: Function
+- `init`: Function  
   Initialization function that will be executed after spawning the worker and
   before sending jobs to it. If the function returns a Promise, it will be awaited.
-- `initData`: any
+- `initData`: any  
   Optional data passed to the init function of each spawned worker.
-- `numWorkers`: number
+- `numWorkers`: number  
   Number of workers to spawn. If this option is specified, `maxWorkers` and
   `minFreeThreds` will be ignored.
-- `maxWorkers`: number (Default: number of logical CPUs)
+- `maxWorkers`: number (Default: number of logical CPUs)  
   Maximum number of workers that will be spawned. This number must be at least
   one and is only taken into account if smaller than the total number of CPUs.
-- `minFreeThreads`: number (Default: 1)
+- `minFreeThreads`: number (Default: 1)  
   Minimum number of CPU threads that will be kept free.
   Along with `maxWorkers`, this will determine the number of workers that will
   be spawned. If there is only one CPU, this option is ignored and one worker
