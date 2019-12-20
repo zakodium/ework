@@ -1,3 +1,12 @@
+# [0.4.0](https://github.com/zakodium/ework/compare/v0.3.0...v0.4.0) (2019-12-20)
+
+
+### Features
+
+* support any iterable in map method ([05fab7f](https://github.com/zakodium/ework/commit/05fab7f7c7f31573455a350ecf43bf70c99a6c26))
+
+
+
 # [0.3.0](https://github.com/zakodium/ework/compare/v0.2.1...v0.3.0) (2019-11-25)
 
 
