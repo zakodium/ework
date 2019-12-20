@@ -18,7 +18,7 @@ export type Eworker<Input, Output> = (value: Input) => Output | Promise<Output>;
 export interface IEworkOptions {
   /**
    * Maximum number of workers that will be spawned. This number must be at least
-   * one and is only taken into account if smaller than the number of CPUs.
+   * one and is only taken into account if smaller than the total number of CPUs.
    * Default: number of logical CPUs.
    */
   maxWorkers?: number;
@@ -41,7 +41,7 @@ export interface IEworkOptions {
    */
   init?: (data: any) => any;
   /**
-   * Optional data passed to the init function of each worker.
+   * Optional data passed to the init function of each spawned worker.
    */
   initData?: any;
 }
@@ -159,8 +159,9 @@ export class Ework<Input, Output> {
     this.workers = [];
   }
 
-  public async map(values: Input[]): Promise<Output[]> {
-    return Promise.all(values.map(async (value) => this.enqueue(value)));
+  public async map(values: Iterable<Input>): Promise<Output[]> {
+    const todo = [...values];
+    return Promise.all(todo.map(async (value) => this.enqueue(value)));
   }
 
   private async enqueue(value: Input): Promise<Output> {

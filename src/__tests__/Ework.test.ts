@@ -170,4 +170,11 @@ describe('init function', () => {
     expect(result).toBe(42);
     await worker.terminate();
   });
+
+  it('should support iterable', async () => {
+    const worker = new Ework((value: number) => value + 1);
+    const result = await worker.map(new Set([1, 2, 3]));
+    expect(result).toStrictEqual([2, 3, 4]);
+    await worker.terminate();
+  });
 });
